@@ -1,5 +1,18 @@
 # JWT Authentication Service
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+A production-ready JWT authentication service demonstrating **Permission-Based RBAC** with asymmetric key cryptography (RS256).
+
+## Features
+
+- ✅ **Asymmetric Keys (RS256)**: Secure token signing with RSA 2048
+- ✅ **Permission-Based RBAC**: Resource-based permissions embedded in JWT
+- ✅ **Stateless Authorization**: No database lookups for permission checks
+- ✅ **Refresh Tokens**: Long-lived refresh tokens with short-lived access tokens
+- ✅ **File-Based Key Management**: Simple key generation and rotation
+- ✅ **Microservice Architecture**: Separate Auth and Resource services
+
 ## Project Structure
 
 - `auth_service/`: Contains the Authentication Service code
@@ -81,3 +94,19 @@ curl -X GET http://localhost:5001/admin \
 curl -X DELETE http://localhost:5001/admin/users \
      -H "Authorization: Bearer <ADMIN_ACCESS_TOKEN>"
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## Security
+
+⚠️ **This is a demonstration project.** See [SECURITY.md](SECURITY.md) for important security considerations before using in production.
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Author
+
+[Your Name] - [Your GitHub Profile]
