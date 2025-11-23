@@ -42,45 +42,71 @@ def token_required(f):
             
             current_user = data['sub']
             current_roles = data.get('roles', [])
+            current_permissions = data.get('permissions', [])  # NEW: Extract permissions
             
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token expired!'}), 401
         except jwt.InvalidTokenError as e:
             return jsonify({'message': f'Invalid token: {str(e)}'}), 401
             
-        # Pass user and roles to the route
-        return f(current_user, current_roles, *args, **kwargs)
+        # Pass user, roles, and permissions to the route
+        return f(current_user, current_roles, current_permissions, *args, **kwargs)
     
     return decorated
 
-def role_required(required_role):
+def permission_required(required_permission):
+    """
+    NEW: Permission-based decorator
+    Checks if the user has the required permission
+    """
     def decorator(f):
         @wraps(f)
-        def decorated_function(current_user, current_roles, *args, **kwargs):
-            if required_role not in current_roles:
-                return jsonify({'message': f'Access denied! Required role: {required_role}'}), 403
-            return f(current_user, current_roles, *args, **kwargs)
+        def decorated_function(current_user, current_roles, current_permissions, *args, **kwargs):
+            if required_permission not in current_permissions:
+                return jsonify({
+                    'message': f'Access denied! Required permission: {required_permission}',
+                    'your_permissions': current_permissions
+                }), 403
+            return f(current_user, current_roles, current_permissions, *args, **kwargs)
         return decorated_function
     return decorator
 
 @app.route('/protected', methods=['GET'])
 @token_required
-def protected(current_user, current_roles):
+@permission_required('read:data')
+def protected(current_user, current_roles, current_permissions):
     return jsonify({
         'message': 'This is a protected resource.',
         'user': current_user,
         'roles': current_roles,
+        'permissions': current_permissions,
         'data': [1, 2, 3, 4, 5]
     })
 
 @app.route('/admin', methods=['GET'])
 @token_required
-@role_required('admin')
-def admin_only(current_user, current_roles):
+@permission_required('read:admin_panel')
+def admin_only(current_user, current_roles, current_permissions):
     return jsonify({
         'message': 'Welcome Admin!',
         'user': current_user,
+        'permissions': current_permissions,
         'secret_admin_data': 'TOP SECRET'
+    })
+
+@app.route('/admin/users', methods=['DELETE'])
+@token_required
+@permission_required('delete:users')
+def delete_users(current_user, current_roles, current_permissions):
+    """
+    NEW: Demonstrates fine-grained permission control
+    Only users with 'delete:users' permission can access this
+    """
+    return jsonify({
+        'message': 'User deletion endpoint',
+        'user': current_user,
+        'action': 'This would delete users (demo only)',
+        'permissions': current_permissions
     })
 
 if __name__ == '__main__':

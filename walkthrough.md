@@ -1,44 +1,42 @@
-# JWT Authentication Service Walkthrough (File-Based Keys)
+# JWT Authentication Service Walkthrough (Permission-Based RBAC)
 
-I have successfully refactored the service to use **File-Based Key Distribution** and verified the full **Login -> Access -> Refresh -> Access** flow.
+I have successfully implemented **Permission-Based RBAC** with resource-based permission naming for clarity and maintainability.
 
 ## Changes Implemented
 
-### 1. Key Generation
-- **`key_generator.py`**: A standalone script that generates an RSA 2048 Key Pair.
-- **Output**: Saves `private_key.pem` and `public_key.pem` to the `keys/` directory.
+### 1. Resource-Based Permission Naming
+- **`auth_service/permissions.json`**: Defines role-to-permission mappings using resource-based names
+  - `read:data` - Access to general data resources
+  - `read:admin_panel` - Access to admin panel resources
+  - `write:admin_panel` - Modify admin panel resources
+  - `delete:users` - Delete user resources
 
-### 2. Auth Service
-- Loads `keys/private_key.pem` on startup.
-- Signs tokens using this private key (RS256).
-- Implements `/refresh` endpoint to issue new access tokens.
+### 2. Permission-Based RBAC Architecture
+- **Auth Service**: 
+  - Loads `permissions.json` at startup
+  - Resolves permissions from user roles
+  - Embeds `permissions` array in JWT payload
+- **Resource Service**:
+  - Extracts `permissions` from JWT
+  - Uses `@permission_required('resource:action')` decorator
+  - No API calls needed - all validation is local
 
-### 3. Resource Service
-- Loads `keys/public_key.pem` on startup.
-- Verifies tokens using this public key.
+### 3. Endpoint Protection
+- `/protected` - Requires `read:data` permission
+- `/admin` - Requires `read:admin_panel` permission  
+- `/admin/users` (DELETE) - Requires `delete:users` permission
 
-## Verification Results
+### 4. Key Features
+- **Stateless**: Permissions in JWT, no database lookups
+- **Scalable**: No external RBAC service calls
+- **Flexible**: Add new roles/permissions in `permissions.json` without code changes
+- **Clear**: Resource-based naming (not URL-based)
 
-I ran the `verify_flow.py` script which now tests the complete lifecycle:
-
-```text
---- Starting Verification Flow (File-Based Keys) ---
-
-1. Logging in as 'user1'...
-SUCCESS: Login successful.
-
-2. Accessing Protected Resource (Token A)...
-SUCCESS: Accessed protected resource.
-Data: [1, 2, 3, 4, 5]
-
-3. Refreshing Access Token...
-SUCCESS: Token refreshed.
-
-4. Accessing Protected Resource (Token B)...
-SUCCESS: Accessed protected resource with NEW token.
-
---- Verification Complete ---
-```
+## File Organization
+- `auth_service/secrets.json` - User credentials
+- `auth_service/permissions.json` - Role-permission mappings
+- `keys/` - RSA key pairs
+- `config.json` - Shared configuration
 
 ## How to Run
 
@@ -56,5 +54,5 @@ SUCCESS: Accessed protected resource with NEW token.
     ```
 4.  **Run Verification**:
     ```bash
-    python verify_flow.py
+    python test/verify_flow.py
     ```

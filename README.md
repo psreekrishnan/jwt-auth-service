@@ -2,16 +2,24 @@
 
 ## Project Structure
 
-- `auth_service/`: Contains the Authentication Service code.
-- `resource_service/`: Contains the Resource Service code.
-- `test/`: Contains verification scripts.
-- `keys/`: Contains the generated RSA keys (`private_key.pem`, `public_key.pem`).
-- `key_generator.py`: Script to generate new keys.
-- `config.json`: Shared configuration.
-- `secrets.json`: User credentials.
-- `architecture.md`: Detailed architecture and flow documentation.
-- `flow.puml`: PlantUML sequence diagram.
-- `walkthrough.md`: Verification results.
+- `auth_service/`: Contains the Authentication Service code
+  - `main.py`: Auth service implementation
+  - `secrets.json`: User credentials (not committed to git)
+  - `permissions.json`: Role-to-permission mappings
+  - `requirements.txt`: Python dependencies
+- `resource_service/`: Contains the Resource Service code
+  - `main.py`: Resource service implementation
+  - `requirements.txt`: Python dependencies
+- `test/`: Contains verification scripts
+  - `verify_flow.py`: End-to-end verification script
+- `keys/`: Contains the generated RSA keys (not committed to git)
+  - `private_key.pem`: Private key for signing tokens
+  - `public_key.pem`: Public key for verifying tokens
+- `key_generator.py`: Script to generate new RSA key pairs
+- `config.json`: Shared configuration (token expiry, service URLs)
+- `architecture.md`: Detailed architecture and flow documentation
+- `flow.puml`: PlantUML sequence diagram
+- `walkthrough.md`: Verification results
 
 ## Setup
 
@@ -65,5 +73,11 @@ curl -X GET http://localhost:5001/protected \
 ### 3. Access Admin Resource
 ```bash
 curl -X GET http://localhost:5001/admin \
+     -H "Authorization: Bearer <ADMIN_ACCESS_TOKEN>"
+```
+
+### 4. Delete Users (Admin only)
+```bash
+curl -X DELETE http://localhost:5001/admin/users \
      -H "Authorization: Bearer <ADMIN_ACCESS_TOKEN>"
 ```

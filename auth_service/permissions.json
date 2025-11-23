@@ -1,0 +1,23 @@
+{
+    "roles": {
+        "admin": {
+            "permissions": [
+                "read:data",
+                "read:admin_panel",
+                "write:admin_panel",
+                "delete:users"
+            ]
+        },
+        "user": {
+            "permissions": [
+                "read:data"
+            ]
+        },
+        "moderator": {
+            "permissions": [
+                "read:data",
+                "read:admin_panel"
+            ]
+        }
+    }
+}

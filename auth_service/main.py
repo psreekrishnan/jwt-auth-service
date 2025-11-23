@@ -8,8 +8,10 @@ app = Flask(__name__)
 
 # Load Configuration
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SERVICE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(BASE_DIR, 'config.json')
-SECRETS_PATH = os.path.join(BASE_DIR, 'secrets.json')
+SECRETS_PATH = os.path.join(SERVICE_DIR, 'secrets.json')
+PERMISSIONS_PATH = os.path.join(SERVICE_DIR, 'permissions.json')
 PRIVATE_KEY_PATH = os.path.join(BASE_DIR, 'keys', 'private_key.pem')
 
 with open(CONFIG_PATH, 'r') as f:
@@ -17,6 +19,9 @@ with open(CONFIG_PATH, 'r') as f:
 
 with open(SECRETS_PATH, 'r') as f:
     secrets = json.load(f)
+
+with open(PERMISSIONS_PATH, 'r') as f:
+    permissions_config = json.load(f)
 
 # Load Private Key
 with open(PRIVATE_KEY_PATH, 'rb') as f:
@@ -29,10 +34,26 @@ REFRESH_TOKEN_EXPIRATION_DAYS = config['refresh_token_expiration_days']
 # Mock Refresh Token Store
 refresh_tokens = {}
 
+def get_permissions_for_roles(roles):
+    """
+    Resolve permissions from roles using permissions.json
+    Returns a unique list of permissions
+    """
+    permissions = set()
+    for role in roles:
+        if role in permissions_config['roles']:
+            role_permissions = permissions_config['roles'][role]['permissions']
+            permissions.update(role_permissions)
+    return list(permissions)
+
 def generate_access_token(username, roles):
+    # Get permissions for the user's roles
+    permissions = get_permissions_for_roles(roles)
+    
     payload = {
         'sub': username,
         'roles': roles,
+        'permissions': permissions,  # NEW: Embed permissions in JWT
         'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRATION_MINUTES),
         'iat': datetime.datetime.utcnow(),
         'type': 'access'
@@ -67,8 +88,6 @@ def login():
 
     if username in users:
         user_data = users[username]
-        # Check password (handle both old string format and new dict format for backward compat if needed, 
-        # but we updated secrets.json so we assume dict)
         stored_password = user_data['password']
         
         if stored_password == password:
@@ -103,7 +122,7 @@ def refresh():
         if token not in refresh_tokens or refresh_tokens[token] != username:
              return jsonify({'message': 'Invalid or revoked refresh token!'}), 401
 
-        # Fetch roles again for the new token
+        # Fetch roles and permissions again for the new token
         roles = users[username]['roles']
         new_access_token = generate_access_token(username, roles)
         
