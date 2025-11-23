@@ -25,14 +25,15 @@ A production-ready JWT authentication service demonstrating **Permission-Based R
   - `requirements.txt`: Python dependencies
 - `test/`: Contains verification scripts
   - `verify_flow.py`: End-to-end verification script
+- `docs/`: Technical documentation
+  - `architecture.md`: Architecture and flow documentation
+  - `walkthrough.md`: Verification results and guide
+  - `flow.puml`: PlantUML sequence diagram
 - `keys/`: Contains the generated RSA keys (not committed to git)
   - `private_key.pem`: Private key for signing tokens
   - `public_key.pem`: Public key for verifying tokens
 - `key_generator.py`: Script to generate new RSA key pairs
 - `config.json`: Shared configuration (token expiry, service URLs)
-- `architecture.md`: Detailed architecture and flow documentation
-- `flow.puml`: PlantUML sequence diagram
-- `walkthrough.md`: Verification results
 
 ## Setup
 
