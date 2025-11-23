@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A production-ready JWT authentication service demonstrating **Permission-Based RBAC** with asymmetric key cryptography (RS256).
+A **demonstration** JWT authentication service showcasing **Permission-Based RBAC** with asymmetric key cryptography (RS256). This project is designed for learning and prototyping - see [SECURITY.md](SECURITY.md) for production considerations.
 
 ## Features
 
