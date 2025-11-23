@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Secrets and Keys
+#secrets.json
+#keys/
+#*.pem
+
+# IDEs
+.vscode/
+.idea/

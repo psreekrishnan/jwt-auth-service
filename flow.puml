@@ -1,0 +1,37 @@
+@startuml
+actor Client
+participant "Auth Service (Port 5000)" as AuthService
+participant "Resource Service (Port 5001)" as ResourceService
+database "File System" as FS
+
+group 1. Startup
+    AuthService -> FS: Load private_key.pem
+    ResourceService -> FS: Load public_key.pem
+end
+
+group 2. Login Flow
+    Client -> AuthService: POST /login (username, password)
+    AuthService -> AuthService: Sign Access Token (RS256)
+    AuthService -> AuthService: Sign Refresh Token (HS256)
+    AuthService --> Client: Returns {access_token, refresh_token}
+end
+
+group 3. Access Protected Resource
+    Client -> ResourceService: GET /protected (Header: Bearer <access_token>)
+    ResourceService -> ResourceService: Verify Signature using PUBLIC Key
+    ResourceService --> Client: Returns 200 OK + Data
+end
+
+group 4. Token Refresh Flow
+    Client -> AuthService: POST /refresh (refresh_token)
+    AuthService -> AuthService: Verify Refresh Token (HS256)
+    AuthService -> AuthService: Generate NEW Access Token (RS256)
+    AuthService --> Client: Returns {access_token: <new_token>}
+end
+
+group 5. Access with New Token
+    Client -> ResourceService: GET /protected (Header: Bearer <new_access_token>)
+    ResourceService -> ResourceService: Verify Signature using PUBLIC Key
+    ResourceService --> Client: Returns 200 OK + Data
+end
+@enduml

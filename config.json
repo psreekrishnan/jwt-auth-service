@@ -1,0 +1,7 @@
+{
+    "auth_service_url": "http://localhost:5000",
+    "resource_service_url": "http://localhost:5001",
+    "access_token_expiration_minutes": 15,
+    "refresh_token_expiration_days": 7,
+    "key_rotation_overlap_minutes": 20
+}
