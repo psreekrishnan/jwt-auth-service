@@ -29,9 +29,10 @@ REFRESH_TOKEN_EXPIRATION_DAYS = config['refresh_token_expiration_days']
 # Mock Refresh Token Store
 refresh_tokens = {}
 
-def generate_access_token(username):
+def generate_access_token(username, roles):
     payload = {
         'sub': username,
+        'roles': roles,
         'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRATION_MINUTES),
         'iat': datetime.datetime.utcnow(),
         'type': 'access'
@@ -64,16 +65,23 @@ def login():
     username = auth.get('username')
     password = auth.get('password')
 
-    if username in users and users[username] == password:
-        access_token = generate_access_token(username)
-        refresh_token = generate_refresh_token(username)
+    if username in users:
+        user_data = users[username]
+        # Check password (handle both old string format and new dict format for backward compat if needed, 
+        # but we updated secrets.json so we assume dict)
+        stored_password = user_data['password']
         
-        refresh_tokens[refresh_token] = username
-        
-        return jsonify({
-            'access_token': access_token,
-            'refresh_token': refresh_token
-        })
+        if stored_password == password:
+            roles = user_data.get('roles', [])
+            access_token = generate_access_token(username, roles)
+            refresh_token = generate_refresh_token(username)
+            
+            refresh_tokens[refresh_token] = username
+            
+            return jsonify({
+                'access_token': access_token,
+                'refresh_token': refresh_token
+            })
 
     return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
@@ -95,7 +103,9 @@ def refresh():
         if token not in refresh_tokens or refresh_tokens[token] != username:
              return jsonify({'message': 'Invalid or revoked refresh token!'}), 401
 
-        new_access_token = generate_access_token(username)
+        # Fetch roles again for the new token
+        roles = users[username]['roles']
+        new_access_token = generate_access_token(username, roles)
         
         return jsonify({'access_token': new_access_token})
         

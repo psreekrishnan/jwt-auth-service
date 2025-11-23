@@ -1,37 +1,70 @@
 @startuml
+skinparam responseMessageBelowArrow true
+
 actor Client
 participant "Auth Service (Port 5000)" as AuthService
 participant "Resource Service (Port 5001)" as ResourceService
 database "File System" as FS
 
-group 1. Startup
+group 1. Startup (Key Loading)
     AuthService -> FS: Load private_key.pem
+    note right: Used for SIGNING tokens (RS256)
+    
     ResourceService -> FS: Load public_key.pem
+    note right: Used for VERIFYING tokens
 end
 
 group 2. Login Flow
-    Client -> AuthService: POST /login (username, password)
-    AuthService -> AuthService: Sign Access Token (RS256)
-    AuthService -> AuthService: Sign Refresh Token (HS256)
-    AuthService --> Client: Returns {access_token, refresh_token}
+    Client -> AuthService: POST /login\n{username, password}
+    
+    activate AuthService
+    AuthService -> AuthService: Validate Credentials (secrets.json)
+    AuthService -> AuthService: Fetch User Roles (e.g. ["admin", "user"])
+    
+    AuthService -> AuthService: Generate Access Token (RS256)
+    note right
+      Payload:
+      {
+        "sub": "user1",
+        "roles": ["admin"],
+        "exp": ...
+      }
+    end note
+    
+    AuthService -> AuthService: Generate Refresh Token (HS256)
+    
+    AuthService --> Client: 200 OK\n{access_token, refresh_token}
+    deactivate AuthService
 end
 
-group 3. Access Protected Resource
-    Client -> ResourceService: GET /protected (Header: Bearer <access_token>)
-    ResourceService -> ResourceService: Verify Signature using PUBLIC Key
-    ResourceService --> Client: Returns 200 OK + Data
+group 3. Access Protected Resource (RBAC)
+    Client -> ResourceService: GET /admin\nHeader: Bearer <access_token>
+    
+    activate ResourceService
+    ResourceService -> ResourceService: Verify Signature (using public_key.pem)
+    
+    alt Signature Valid
+        ResourceService -> ResourceService: Extract 'roles' from Token
+        
+        alt Role 'admin' present
+            ResourceService --> Client: 200 OK\n{secret_admin_data}
+        else Role 'admin' MISSING
+            ResourceService --> Client: 403 Forbidden\n{message: "Access denied"}
+        end
+        
+    else Signature Invalid / Expired
+        ResourceService --> Client: 401 Unauthorized
+    end
+    deactivate ResourceService
 end
 
 group 4. Token Refresh Flow
-    Client -> AuthService: POST /refresh (refresh_token)
+    Client -> AuthService: POST /refresh\n{refresh_token}
+    
+    activate AuthService
     AuthService -> AuthService: Verify Refresh Token (HS256)
-    AuthService -> AuthService: Generate NEW Access Token (RS256)
-    AuthService --> Client: Returns {access_token: <new_token>}
-end
-
-group 5. Access with New Token
-    Client -> ResourceService: GET /protected (Header: Bearer <new_access_token>)
-    ResourceService -> ResourceService: Verify Signature using PUBLIC Key
-    ResourceService --> Client: Returns 200 OK + Data
+    AuthService -> AuthService: Generate NEW Access Token (RS256)\n(Includes Roles)
+    AuthService --> Client: 200 OK\n{access_token}
+    deactivate AuthService
 end
 @enduml

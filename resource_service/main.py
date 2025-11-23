@@ -41,23 +41,46 @@ def token_required(f):
                  return jsonify({'message': 'Invalid token type! Expected access token.'}), 401
             
             current_user = data['sub']
+            current_roles = data.get('roles', [])
             
         except jwt.ExpiredSignatureError:
             return jsonify({'message': 'Token expired!'}), 401
         except jwt.InvalidTokenError as e:
             return jsonify({'message': f'Invalid token: {str(e)}'}), 401
             
-        return f(current_user, *args, **kwargs)
+        # Pass user and roles to the route
+        return f(current_user, current_roles, *args, **kwargs)
     
     return decorated
 
+def role_required(required_role):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(current_user, current_roles, *args, **kwargs):
+            if required_role not in current_roles:
+                return jsonify({'message': f'Access denied! Required role: {required_role}'}), 403
+            return f(current_user, current_roles, *args, **kwargs)
+        return decorated_function
+    return decorator
+
 @app.route('/protected', methods=['GET'])
 @token_required
-def protected(current_user):
+def protected(current_user, current_roles):
     return jsonify({
         'message': 'This is a protected resource.',
         'user': current_user,
+        'roles': current_roles,
         'data': [1, 2, 3, 4, 5]
+    })
+
+@app.route('/admin', methods=['GET'])
+@token_required
+@role_required('admin')
+def admin_only(current_user, current_roles):
+    return jsonify({
+        'message': 'Welcome Admin!',
+        'user': current_user,
+        'secret_admin_data': 'TOP SECRET'
     })
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@
 
 - `auth_service/`: Contains the Authentication Service code.
 - `resource_service/`: Contains the Resource Service code.
+- `test/`: Contains verification scripts.
 - `keys/`: Contains the generated RSA keys (`private_key.pem`, `public_key.pem`).
 - `key_generator.py`: Script to generate new keys.
 - `config.json`: Shared configuration.
@@ -11,7 +12,6 @@
 - `architecture.md`: Detailed architecture and flow documentation.
 - `flow.puml`: PlantUML sequence diagram.
 - `walkthrough.md`: Verification results.
-- `verify_flow.py`: Script to verify the flow.
 
 ## Setup
 
@@ -44,7 +44,7 @@
 Once both services are running, you can run the verification script:
 
 ```bash
-python verify_flow.py
+python test/verify_flow.py
 ```
 
 ## Manual Testing (cURL)
@@ -60,4 +60,10 @@ curl -X POST http://localhost:5000/login \
 ```bash
 curl -X GET http://localhost:5001/protected \
      -H "Authorization: Bearer <ACCESS_TOKEN>"
+```
+
+### 3. Access Admin Resource
+```bash
+curl -X GET http://localhost:5001/admin \
+     -H "Authorization: Bearer <ADMIN_ACCESS_TOKEN>"
 ```
