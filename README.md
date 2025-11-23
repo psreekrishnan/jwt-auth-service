@@ -110,4 +110,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Author
 
-[Your Name] - [Your GitHub Profile]
+Sreekrishnan P - [GitHub Profile](https://github.com/psreekrishnan)
